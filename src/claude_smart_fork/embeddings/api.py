@@ -52,7 +52,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
             model=self._model_name,
             input=text,
         )
-        return response.data[0].embedding
+        return list(response.data[0].embedding)
 
     def embed_query(self, query: str) -> list[float]:
         """Generate embedding for a search query."""
@@ -66,7 +66,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
             model=self._model_name,
             input=texts,
         )
-        return [item.embedding for item in response.data]
+        return [list(item.embedding) for item in response.data]
 
     @property
     def dimension(self) -> int:

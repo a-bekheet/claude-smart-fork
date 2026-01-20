@@ -144,6 +144,8 @@ module = [
     "chromadb.*",
     "sentence_transformers.*",
     "ollama.*",
+    "openai.*",
+    "anthropic.*",
 ]
 ignore_missing_imports = true
 
