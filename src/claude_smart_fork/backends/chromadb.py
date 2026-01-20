@@ -29,8 +29,7 @@ class ChromaDBBackend(BaseBackend):
     def __init__(self, config: Config) -> None:
         if not CHROMADB_AVAILABLE:
             raise ImportError(
-                "ChromaDB is not installed. "
-                "Install with: pip install claude-smart-fork[chromadb]"
+                "ChromaDB is not installed. Install with: pip install claude-smart-fork[chromadb]"
             )
 
         super().__init__(config)

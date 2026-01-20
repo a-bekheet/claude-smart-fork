@@ -52,7 +52,7 @@ class OllamaSummarizer(BaseSummarizer):
     def __init__(self, config: Config) -> None:
         if not OLLAMA_AVAILABLE:
             raise ImportError(
-                "ollama is not installed. " "Install with: pip install claude-smart-fork[ollama]"
+                "ollama is not installed. Install with: pip install claude-smart-fork[ollama]"
             )
 
         super().__init__(config)
@@ -73,7 +73,7 @@ class OllamaSummarizer(BaseSummarizer):
         except Exception as e:
             if "connection" in str(e).lower():
                 raise ConnectionError(
-                    "Cannot connect to Ollama. " "Make sure Ollama is running: ollama serve"
+                    "Cannot connect to Ollama. Make sure Ollama is running: ollama serve"
                 ) from e
             raise
 

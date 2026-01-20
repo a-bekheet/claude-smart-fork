@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -19,8 +18,17 @@ if TYPE_CHECKING:
     from claude_smart_fork.config import Config
 
 
+class ModelConfig(TypedDict):
+    """Type for model configuration."""
+
+    dimension: int
+    query_prefix: str
+    document_prefix: str
+    trust_remote_code: bool
+
+
 # Model configurations
-MODEL_CONFIGS = {
+MODEL_CONFIGS: dict[str, ModelConfig] = {
     "nomic-ai/nomic-embed-text-v1": {
         "dimension": 768,
         "query_prefix": "search_query: ",
@@ -64,15 +72,13 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         super().__init__(config)
 
         self._model_name = config.embedding_model
-        self._model_config = MODEL_CONFIGS.get(
-            self._model_name,
-            {
-                "dimension": 768,
-                "query_prefix": "",
-                "document_prefix": "",
-                "trust_remote_code": False,
-            },
-        )
+        default_config: ModelConfig = {
+            "dimension": 768,
+            "query_prefix": "",
+            "document_prefix": "",
+            "trust_remote_code": False,
+        }
+        self._model_config: ModelConfig = MODEL_CONFIGS.get(self._model_name, default_config)
 
         # Set cache directory
         cache_dir = config.data_dir / "models"
@@ -82,7 +88,7 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         # Load model (downloads on first use)
         self._model = SentenceTransformer(
             self._model_name,
-            trust_remote_code=self._model_config["trust_remote_code"],
+            trust_remote_code=bool(self._model_config["trust_remote_code"]),
         )
 
     def embed(self, text: str) -> list[float]:
@@ -91,7 +97,7 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         prefixed_text = f"{prefix}{text}" if prefix else text
 
         embedding = self._model.encode(prefixed_text, convert_to_numpy=True)
-        return embedding.tolist()
+        return list(embedding.tolist())
 
     def embed_query(self, query: str) -> list[float]:
         """Generate embedding for a search query."""
@@ -99,7 +105,7 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
         prefixed_query = f"{prefix}{query}" if prefix else query
 
         embedding = self._model.encode(prefixed_query, convert_to_numpy=True)
-        return embedding.tolist()
+        return list(embedding.tolist())
 
     def embed_batch(self, texts: list[str], batch_size: int = 32) -> list[list[float]]:
         """Generate embeddings for multiple texts efficiently."""
@@ -113,7 +119,7 @@ class LocalEmbeddingProvider(BaseEmbeddingProvider):
             show_progress_bar=len(texts) > 10,
         )
 
-        return embeddings.tolist()
+        return [list(e) for e in embeddings.tolist()]
 
     @property
     def dimension(self) -> int:

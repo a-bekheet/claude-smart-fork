@@ -56,8 +56,7 @@ class ClaudeSummarizer(BaseSummarizer):
     def __init__(self, config: Config) -> None:
         if not ANTHROPIC_AVAILABLE:
             raise ImportError(
-                "anthropic is not installed. "
-                "Install with: pip install claude-smart-fork[claude]"
+                "anthropic is not installed. Install with: pip install claude-smart-fork[claude]"
             )
 
         super().__init__(config)
@@ -90,7 +89,10 @@ class ClaudeSummarizer(BaseSummarizer):
         )
 
         # Parse response
-        response_text = response.content[0].text.strip()
+        first_block = response.content[0]
+        if not hasattr(first_block, "text"):
+            raise ValueError("Unexpected response type from Claude API")
+        response_text = first_block.text.strip()
 
         try:
             # Try to extract JSON from response

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -14,7 +13,7 @@ from rich.table import Table
 
 from claude_smart_fork import __version__
 from claude_smart_fork.backends import list_available_backends
-from claude_smart_fork.config import Config, get_config, init_config
+from claude_smart_fork.config import get_config, init_config
 from claude_smart_fork.embeddings import list_available_providers
 from claude_smart_fork.indexer import Indexer
 from claude_smart_fork.search import format_results, format_results_json, search_sessions
@@ -72,7 +71,7 @@ def init(
 def search(
     query: str = typer.Argument(..., help="Search query"),
     limit: int = typer.Option(5, "--limit", "-n", help="Maximum results"),
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Filter by project path"),
+    project: str | None = typer.Option(None, "--project", "-p", help="Filter by project path"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
     detailed: bool = typer.Option(False, "--detailed", "-d", help="Show detailed results"),
 ) -> None:
@@ -87,13 +86,13 @@ def search(
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
 def index(
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without indexing"),
-    limit: Optional[int] = typer.Option(None, "--limit", "-n", help="Maximum sessions to index"),
+    limit: int | None = typer.Option(None, "--limit", "-n", help="Maximum sessions to index"),
     force: bool = typer.Option(False, "--force", "-f", help="Force re-index all sessions"),
     min_messages: int = typer.Option(3, "--min-messages", help="Minimum messages to index"),
 ) -> None:
@@ -212,8 +211,9 @@ def config(
         return
 
     if show:
-        console.print(Panel.fit(
-            f"""[bold]Configuration[/bold]
+        console.print(
+            Panel.fit(
+                f"""[bold]Configuration[/bold]
 
 [cyan]Data directory:[/cyan] {cfg.data_dir}
 [cyan]Sessions path:[/cyan] {cfg.sessions_path}
@@ -227,8 +227,9 @@ def config(
 [bold]Min session messages:[/bold] {cfg.min_session_messages}
 [bold]Auto-index:[/bold] {cfg.auto_index}
 """,
-            title="smart-fork config",
-        ))
+                title="smart-fork config",
+            )
+        )
 
 
 @app.command("config-set")
@@ -254,19 +255,22 @@ def config_set(
 
     # Convert value to appropriate type
     current = getattr(cfg, key)
+    converted_value: str | bool | int
     if isinstance(current, bool):
-        value = value.lower() in ("true", "1", "yes")
+        converted_value = value.lower() in ("true", "1", "yes")
     elif isinstance(current, int):
-        value = int(value)
+        converted_value = int(value)
     elif isinstance(current, Path):
-        value = str(value)
+        converted_value = str(value)
+    else:
+        converted_value = value
 
-    data[key] = value
+    data[key] = converted_value
 
     with open(config_path, "w") as f:
         json.dump(data, f, indent=2)
 
-    console.print(f"✅ Set {key} = {value}")
+    console.print(f"✅ Set {key} = {converted_value}")
 
 
 @app.command()

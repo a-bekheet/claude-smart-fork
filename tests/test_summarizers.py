@@ -85,16 +85,15 @@ class TestTechnologyDetection:
 
     def test_detects_python_from_extension(self, summarizer: SimpleSummarizer) -> None:
         """Test Python detection from file extensions."""
-        from claude_smart_fork.parser import SessionData, Message
         from datetime import datetime
+
+        from claude_smart_fork.parser import Message, SessionData
 
         session = SessionData(
             session_id="test",
             project_path="/test",
             git_branch=None,
-            messages=[
-                Message(role="user", content="test", timestamp=datetime.now(), tool_uses=[])
-            ],
+            messages=[Message(role="user", content="test", timestamp=datetime.now(), tool_uses=[])],
             files_touched=["main.py", "utils.py", "tests/test_main.py"],
             first_timestamp=datetime.now(),
             last_timestamp=datetime.now(),
@@ -106,8 +105,9 @@ class TestTechnologyDetection:
 
     def test_detects_react_from_content(self, summarizer: SimpleSummarizer) -> None:
         """Test React detection from message content."""
-        from claude_smart_fork.parser import SessionData, Message
         from datetime import datetime
+
+        from claude_smart_fork.parser import Message, SessionData
 
         session = SessionData(
             session_id="test",

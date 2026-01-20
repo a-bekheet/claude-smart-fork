@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import json
-import re
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator
 
 from claude_smart_fork.config import get_config
 
@@ -77,7 +76,8 @@ def decode_project_path(encoded: str) -> str:
     Claude encodes paths like /home/user/project as:
     - ~-home-user-project (tilde prefix, dashes)
 
-    This function attempts to reverse that encoding.
+    This function attempts to reverse that encoding using heuristics
+    to preserve hyphenated directory/project names.
     """
     if not encoded:
         return ""
@@ -88,28 +88,61 @@ def decode_project_path(encoded: str) -> str:
     elif encoded.startswith("-"):
         encoded = encoded[1:]
 
-    # Replace dashes with path separators
-    # This is imperfect for paths with actual dashes, but it's the best we can do
-    path = "/" + encoded.replace("-", "/")
+    # Known directory names that are typically single path segments
+    known_dirs = {
+        "home",
+        "Users",
+        "var",
+        "opt",
+        "usr",
+        "tmp",
+        "etc",
+        "root",
+        "projects",
+        "src",
+        "code",
+        "dev",
+        "work",
+        "repos",
+        "github",
+        "Documents",
+        "Desktop",
+        "Downloads",
+        "Applications",
+        "Library",
+        "System",
+        "Volumes",
+        "mnt",
+        "media",
+    }
 
-    # Try to detect and preserve common path patterns with dashes
-    # e.g., my-project should stay as my-project, not my/project
-    # Heuristic: if a segment looks like a common directory, keep previous dash
-    common_dirs = {"home", "Users", "var", "opt", "usr", "tmp", "projects", "src", "code"}
+    # Split by dashes
+    parts = encoded.split("-")
+    result: list[str] = []
+    current_segment: list[str] = []
 
-    parts = path.split("/")
-    result = []
-    i = 0
-    while i < len(parts):
-        part = parts[i]
-        if part in common_dirs or i <= 2:  # Keep early path segments as-is
+    for part in parts:
+        if part in known_dirs:
+            # Known directory - flush current segment and start new one
+            if current_segment:
+                result.append("-".join(current_segment))
+                current_segment = []
+            result.append(part)
+        elif len(result) < 3:
+            # Early path segments (like username) - treat as separate
+            if current_segment:
+                result.append("-".join(current_segment))
+                current_segment = []
             result.append(part)
         else:
-            # For later segments, be more conservative about splitting
-            result.append(part)
-        i += 1
+            # Later segments - accumulate as hyphenated name
+            current_segment.append(part)
 
-    return "/".join(result)
+    # Flush remaining segment
+    if current_segment:
+        result.append("-".join(current_segment))
+
+    return "/" + "/".join(result)
 
 
 def parse_timestamp(ts_str: str) -> datetime:
@@ -158,8 +191,8 @@ def parse_session_file(filepath: Path) -> SessionData | None:
     project_path = decode_project_path(filepath.parent.name)
 
     try:
-        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
-            for line_num, line in enumerate(f, 1):
+        with open(filepath, encoding="utf-8", errors="replace") as f:
+            for _line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
                     continue
@@ -233,7 +266,7 @@ def parse_session_file(filepath: Path) -> SessionData | None:
                             )
                         )
 
-    except (OSError, IOError) as e:
+    except OSError:
         # Log error but don't crash
         return None
 

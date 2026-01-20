@@ -30,9 +30,7 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
 
     def __init__(self, config: Config) -> None:
         if not OPENAI_AVAILABLE:
-            raise ImportError(
-                "openai is not installed. " "Install with: pip install openai"
-            )
+            raise ImportError("openai is not installed. Install with: pip install openai")
 
         super().__init__(config)
 

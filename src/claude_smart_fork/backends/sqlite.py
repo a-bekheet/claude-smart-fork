@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from pathlib import Path
 from typing import Any
 
 from claude_smart_fork.backends.base import BaseBackend, SearchResult, SessionSummary
@@ -124,7 +123,7 @@ class SQLiteBackend(BaseBackend):
             last_updated=row["last_updated"],
         )
 
-    def index_session(self, summary: SessionSummary, embedding: list[float] | None = None) -> None:
+    def index_session(self, summary: SessionSummary, _embedding: list[float] | None = None) -> None:
         """Index a session summary."""
         row = self._summary_to_row(summary)
 
@@ -149,7 +148,7 @@ class SQLiteBackend(BaseBackend):
     def search(
         self,
         query: str,
-        query_embedding: list[float] | None = None,
+        _query_embedding: list[float] | None = None,
         limit: int = 5,
         project_filter: str | None = None,
     ) -> list[SearchResult]:

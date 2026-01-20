@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from claude_smart_fork.backends import get_backend
@@ -41,11 +42,8 @@ def search_sessions(
     query_embedding: list[float] | None = None
 
     if embedding_provider is not None:
-        try:
+        with contextlib.suppress(Exception):
             query_embedding = embedding_provider.embed_query(query)
-        except Exception:
-            # Fall back to keyword search if embedding fails
-            pass
 
     return backend.search(
         query=query,
@@ -87,7 +85,9 @@ def format_results(
             indicator = "🟠"
 
         # Session ID (truncated for display)
-        short_id = result.session_id[:12] + "..." if len(result.session_id) > 12 else result.session_id
+        short_id = (
+            result.session_id[:12] + "..." if len(result.session_id) > 12 else result.session_id
+        )
 
         lines.append(f"{i}. {indicator} **[{score}%]** `{short_id}`")
         lines.append(f"   📁 {summary.project_path}")
@@ -108,7 +108,9 @@ def format_results(
             if summary.outcome:
                 lines.append(f"   ✅ {summary.outcome}")
 
-            lines.append(f"   ⏱️ {summary.duration_minutes:.0f} min, {summary.message_count} messages")
+            lines.append(
+                f"   ⏱️ {summary.duration_minutes:.0f} min, {summary.message_count} messages"
+            )
 
         lines.append("")
 
