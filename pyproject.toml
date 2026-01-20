@@ -1,0 +1,173 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claude-smart-fork"
+version = "0.1.0"
+description = "Semantic search across Claude Code sessions to find the best context for new tasks"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "a-bekheet", email = "alibekheet@outlook.com" }
+]
+keywords = [
+    "claude",
+    "claude-code",
+    "session",
+    "search",
+    "semantic-search",
+    "vector-database",
+    "llm",
+    "ai",
+    "cli"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+# Minimal base dependencies - just CLI + basic search
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
+
+[project.optional-dependencies]
+# Vector search with ChromaDB
+chromadb = [
+    "chromadb>=0.4.0",
+]
+
+# Local embeddings
+embeddings = [
+    "sentence-transformers>=2.2.0",
+    "torch>=2.0.0",
+]
+
+# Ollama for local LLM summarization
+ollama = [
+    "ollama>=0.1.0",
+]
+
+# Claude API for summarization
+claude = [
+    "anthropic>=0.18.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+
+# All optional features
+all = [
+    "claude-smart-fork[chromadb,embeddings,ollama,claude]",
+]
+
+[project.scripts]
+smart-fork = "claude_smart_fork.cli:app"
+csf = "claude_smart_fork.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/a-bekheet/claude-smart-fork"
+Documentation = "https://github.com/a-bekheet/claude-smart-fork#readme"
+Repository = "https://github.com/a-bekheet/claude-smart-fork"
+Issues = "https://github.com/a-bekheet/claude-smart-fork/issues"
+Changelog = "https://github.com/a-bekheet/claude-smart-fork/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/claude_smart_fork"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "B006",   # mutable default arguments
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["claude_smart_fork"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+strict_optional = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "sentence_transformers.*",
+    "ollama.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "--strict-markers",
+    "-ra",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["src/claude_smart_fork"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
